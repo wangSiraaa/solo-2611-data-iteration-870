@@ -1,0 +1,10 @@
+# 采购单 PO-2026-003：光泽可接纳 x/y/gamma（循环与全缺演示用）。
+order: PO-2026-003
+requirements:
+  - metric: gloss
+    stations:
+      - x
+      - y
+      - gamma
+    min: 5
+    max: 9

@@ -10,6 +10,14 @@
     python -m confcat.cli query ./data/catalog.db orders-product doc-0 ingest/column_mapping
     python -m confcat.cli verify ./data/catalog.db orders-product
     python -m confcat.cli tasks ./data/tasks.db
+
+外观抽检联合证书：
+
+    python -m confcat.cli fallbacks ./data/catalog.db appearance inspect
+    python -m confcat.cli submit ./data/catalog.db ./data/tasks.db ./data/certs.db \
+        sub-1 appearance inspect samples/order_po001.yaml data/stations_v1.csv
+    python -m confcat.cli submissions ./data/certs.db --order PO-2026-001
+    python -m confcat.cli certificate ./data/certs.db cert-sub-1
 """
 
 from __future__ import annotations
@@ -82,6 +90,31 @@ def main(argv: list[str] | None = None) -> int:
     p_rows.add_argument("catalog_db")
     p_rows.add_argument("task_id")
 
+    p_fb = sub.add_parser("fallbacks", help="解释抽检配置的候补关系（目录级，无需测量）")
+    p_fb.add_argument("db")
+    p_fb.add_argument("product")
+    p_fb.add_argument("doc")
+    p_fb.add_argument("--version", type=int)
+
+    p_sub = sub.add_parser("submit", help="外观抽检送审（评估并尝试签发联合证书）")
+    p_sub.add_argument("catalog_db")
+    p_sub.add_argument("task_db")
+    p_sub.add_argument("cert_db")
+    p_sub.add_argument("submission_id")
+    p_sub.add_argument("product")
+    p_sub.add_argument("doc")
+    p_sub.add_argument("order_yaml")
+    p_sub.add_argument("csv_path")
+    p_sub.add_argument("--version", type=int)
+
+    p_subs = sub.add_parser("submissions", help="列出送审记录（可按采购单过滤）")
+    p_subs.add_argument("cert_db")
+    p_subs.add_argument("--order")
+
+    p_cert = sub.add_parser("certificate", help="离线重开已发证书并校验摘要")
+    p_cert.add_argument("cert_db")
+    p_cert.add_argument("cert_id")
+
     args = parser.parse_args(argv)
 
     if args.cmd == "publish":
@@ -97,8 +130,24 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    # 证书仓专有命令：离线重开，不依赖目录与源 CSV
+    if args.cmd in ("submissions", "certificate"):
+        from .certificate import CertificateRepository
+
+        with CertificateRepository(args.cert_db) as certs:
+            if args.cmd == "submissions":
+                _print(certs.list_submissions(order_id=args.order))
+            else:
+                _print(
+                    {
+                        "verify": certs.verify_certificate(args.cert_id),
+                        **certs.get_certificate(args.cert_id),
+                    }
+                )
+        return 0
+
     is_task_cmd = args.cmd in ("run-task", "tasks", "rows")
-    catalog_db = args.catalog_db if is_task_cmd else args.db
+    catalog_db = args.catalog_db if is_task_cmd or args.cmd == "submit" else args.db
     with Catalog(catalog_db) as cat:
         if args.cmd == "products":
             _print(
@@ -132,6 +181,27 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.cmd == "verify":
             _print(cat.verify(args.product, args.version))
+        elif args.cmd == "fallbacks":
+            from .fallback import FallbackGraph
+
+            doc = cat.load_document(args.product, args.doc, args.version)
+            _print(FallbackGraph.from_document(doc).describe())
+        elif args.cmd == "submit":
+            from .certificate import CertificateAuthority, CertificateRepository
+
+            with TaskRepository(args.task_db, cat) as repo, CertificateRepository(
+                args.cert_db
+            ) as certs:
+                auth = CertificateAuthority(cat, repo, certs)
+                report = auth.submit(
+                    args.submission_id,
+                    args.product,
+                    args.doc,
+                    Path(args.order_yaml).read_text(encoding="utf-8"),
+                    args.csv_path,
+                    args.version,
+                )
+            _print(report)
         elif is_task_cmd:
             with TaskRepository(args.task_db, cat) as repo:
                 if args.cmd == "run-task":

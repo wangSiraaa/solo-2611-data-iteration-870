@@ -67,3 +67,17 @@ class TaskRejected(ConfCatError):
         self.reason = reason
         prefix = f"[{'/'.join(str(p) for p in self.path)}] " if self.path else ""
         super().__init__(f"{prefix}{message}")
+
+
+class InspectionError(ConfCatError):
+    """外观抽检配置/采购单合同违规（结构非法、类型不符、重复送审等）。
+
+    与 :class:`TaskRejected` 同级：携带配置路径与机器可读原因；
+    抛出时不产生任何送审/证书记录。
+    """
+
+    def __init__(self, message: str, path: tuple = (), reason: str = ""):
+        self.path = tuple(path)
+        self.reason = reason
+        prefix = f"[{'/'.join(str(p) for p in self.path)}] " if self.path else ""
+        super().__init__(f"{prefix}{message}")

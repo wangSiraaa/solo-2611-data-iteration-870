@@ -5,8 +5,9 @@
 * ``yaml_parser`` / ``materialize`` / ``model`` / ``codec``
   —— 受限 YAML 解析、锚点别名与 merge 语义、来源证据、持久化编解码；
 * ``catalog`` —— 命名配置产品目录（可独立用于人工检查）；
-* ``csv_pipeline`` / ``ingest`` —— 消费仓任务、CSV 读取与按配置归一化。
+* ``csv_pipeline`` / ``ingest`` —— 消费仓任务、CSV 读取与按配置归一化；
+* ``fallback`` / ``certificate`` —— 外观抽检候补关系解析与联合证书签发。
 """
 
 __all__ = ["__version__"]
-__version__ = "1.0.0"
+__version__ = "1.1.0"

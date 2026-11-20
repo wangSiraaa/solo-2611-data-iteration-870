@@ -1,0 +1,13 @@
+# 采购单 PO-2026-002：光泽与亮度都只接纳甲台（争用演示用）。
+order: PO-2026-002
+requirements:
+  - metric: gloss
+    stations:
+      - alpha
+    min: 5
+    max: 9
+  - metric: brightness
+    stations:
+      - alpha
+    min: 5
+    max: 9

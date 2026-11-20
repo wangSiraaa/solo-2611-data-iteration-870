@@ -1,0 +1,46 @@
+# 外观抽检配置：检测台本机实测列 + 缺测时的有序候补（他台原测格 / 标准样）。
+# 同一锚点 &gray_plate 被四个格的候补共同引用 —— 同一标准样声明，只算一份依据。
+# 该文档同时含既有 ingest: 段，同一产品既驱动经典 CSV 导入，也驱动外观抽检。
+
+standards:
+  gray_plate: &gray_plate
+    id: STD-GRAY-01
+    value: 7
+
+stations:
+  alpha:
+    label: 甲
+    columns:
+      gloss: a_gloss
+      brightness: a_bright
+    fallback:
+      gloss:
+        - standard: *gray_plate
+      brightness:
+        - standard: *gray_plate
+  beta:
+    label: 乙
+    columns:
+      gloss: b_gloss
+      brightness: b_bright
+    fallback:
+      gloss:
+        - cell:
+            station: alpha
+            metric: gloss
+        - standard: *gray_plate
+      brightness:
+        - cell:
+            station: alpha
+            metric: brightness
+        - standard: *gray_plate
+
+ingest:
+  source_uri: file:///data/stations.csv
+  column_mapping:
+    a_gloss: a_gloss
+    a_bright: a_bright
+    b_gloss: b_gloss
+    b_bright: b_bright
+  missing_value:
+    token: "NA"

@@ -1,0 +1,14 @@
+# 采购单 PO-2026-001：光泽可接纳甲/乙两台，亮度只接纳甲台。
+order: PO-2026-001
+requirements:
+  - metric: gloss
+    stations:
+      - alpha
+      - beta
+    min: 5
+    max: 9
+  - metric: brightness
+    stations:
+      - alpha
+    min: 5
+    max: 9

@@ -1,0 +1,33 @@
+# 循环/全缺演示：x 与 y 的光泽互相引用（循环候补），gamma 只有本机列且缺测。
+stations:
+  x:
+    label: 循环甲
+    columns:
+      gloss: x_gloss
+    fallback:
+      gloss:
+        - cell:
+            station: y
+            metric: gloss
+  y:
+    label: 循环乙
+    columns:
+      gloss: y_gloss
+    fallback:
+      gloss:
+        - cell:
+            station: x
+            metric: gloss
+  gamma:
+    label: 全缺丙
+    columns:
+      gloss: g_gloss
+
+ingest:
+  source_uri: file:///data/stations_cyclic.csv
+  column_mapping:
+    x_gloss: x_gloss
+    y_gloss: y_gloss
+    g_gloss: g_gloss
+  missing_value:
+    token: "NA"
